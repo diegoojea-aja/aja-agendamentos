@@ -7,12 +7,15 @@ import { supabase } from '@/lib/supabase'
 import { authFetch } from '@/lib/api-client'
 import { DarkShell } from '@/components/ui/DarkShell'
 import {
-  Calendar,
+  BarChart3,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
+  ListChecks,
   LogOut,
   Menu,
-  Settings,
+  Plus,
+  Target,
   Users as UsersIcon,
   X,
 } from 'lucide-react'
@@ -28,35 +31,74 @@ interface Profile {
 interface NavItem {
   href: string
   label: string
-  icon: typeof Calendar
+  icon: typeof BarChart3
   roles: Role[] | 'all'
   matcher?: (pathname: string) => boolean
 }
 
-const NAV_PRIMARY: NavItem[] = [
-  {
-    href: '/agendamentos',
-    label: 'Agendamentos',
-    icon: Calendar,
-    roles: 'all',
-    matcher: (p) => p.startsWith('/agendamentos'),
-  },
-]
+interface NavSection {
+  label: string
+  items: NavItem[]
+}
 
-const NAV_ADMIN: NavItem[] = [
+const NAV: NavSection[] = [
   {
-    href: '/admin/usuarios',
-    label: 'Usuários',
-    icon: UsersIcon,
-    roles: ['admin'],
-    matcher: (p) => p.startsWith('/admin/usuarios'),
+    label: 'Principal',
+    items: [
+      {
+        href: '/agendamentos',
+        label: 'Visão geral',
+        icon: BarChart3,
+        roles: ['admin'],
+        matcher: (p) => p === '/agendamentos',
+      },
+      {
+        href: '/agendamentos/meus',
+        label: 'Meus',
+        icon: ListChecks,
+        roles: ['sdr', 'closer'],
+      },
+      {
+        href: '/agendamentos/novo',
+        label: 'Novo',
+        icon: Plus,
+        roles: ['admin', 'sdr'],
+      },
+      {
+        href: '/agendamentos/calendario',
+        label: 'Calendário',
+        icon: CalendarDays,
+        roles: ['admin'],
+      },
+    ],
   },
   {
-    href: '/admin/configuracoes',
-    label: 'Configurações',
-    icon: Settings,
-    roles: ['admin'],
-    matcher: (p) => p === '/admin/configuracoes',
+    label: 'Gestão',
+    items: [
+      {
+        href: '/agendamentos/closers',
+        label: 'Closers',
+        icon: UsersIcon,
+        roles: ['admin'],
+      },
+      {
+        href: '/agendamentos/configuracoes',
+        label: 'Roteamento',
+        icon: Target,
+        roles: ['admin'],
+      },
+    ],
+  },
+  {
+    label: 'Admin',
+    items: [
+      {
+        href: '/admin/usuarios',
+        label: 'Usuários',
+        icon: UsersIcon,
+        roles: ['admin'],
+      },
+    ],
   },
 ]
 
@@ -128,12 +170,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   const role = profile?.role
-  const visiblePrimary = NAV_PRIMARY.filter(
-    (n) => !role || n.roles === 'all' || n.roles.includes(role)
-  )
-  const visibleAdmin = NAV_ADMIN.filter(
-    (n) => !role || n.roles === 'all' || n.roles.includes(role)
-  )
+  const visibleSections = NAV
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(
+        (n) => !role || n.roles === 'all' || n.roles.includes(role)
+      ),
+    }))
+    .filter((section) => section.items.length > 0)
 
   const sidebarWidth = collapsed ? 'w-16' : 'w-60'
 
@@ -230,20 +274,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
-            {!loading && visiblePrimary.map((item) => (
-              <NavItemRow key={item.href} item={item} />
-            ))}
-
-            {!loading && visibleAdmin.length > 0 && (
-              <>
-                <div className={`pt-4 pb-1.5 px-3 text-[10px] uppercase tracking-[0.14em] text-zinc-600 font-semibold ${collapsed ? 'sr-only' : ''}`}>
-                  Admin
+            {!loading && visibleSections.map((section, idx) => (
+              <div key={section.label} className={idx > 0 ? 'pt-3' : ''}>
+                <div className={`pb-1.5 px-3 text-[10px] uppercase tracking-[0.14em] text-zinc-600 font-semibold ${collapsed ? 'sr-only' : ''}`}>
+                  {section.label}
                 </div>
-                {visibleAdmin.map((item) => (
+                {section.items.map((item) => (
                   <NavItemRow key={item.href} item={item} />
                 ))}
-              </>
-            )}
+              </div>
+            ))}
           </nav>
 
           <div className="border-t border-white/[0.04] p-3">

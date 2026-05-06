@@ -7,11 +7,10 @@ const PROTECTED_API = [
   '/api/closer',
   '/api/me',
   '/api/users',
-  '/api/schedule/admin',
-  '/api/schedule/closers/admin',
-  '/api/schedule/bookings',
+  '/api/schedule',
 ]
-const PUBLIC_API: string[] = []
+// /api/cron usa CRON_SECRET (verificado dentro da rota); /api/health é público.
+const PUBLIC_API: string[] = ['/api/cron', '/api/health']
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -81,8 +80,6 @@ export const config = {
     '/api/closer/:path*',
     '/api/me',
     '/api/users/:path*',
-    '/api/schedule/bookings/:path*',
-    '/api/schedule/closers/admin/:path*',
-    '/api/schedule/admin/:path*',
+    '/api/schedule/:path*',
   ],
 }
